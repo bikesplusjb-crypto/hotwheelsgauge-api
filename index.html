@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ComicGauge — Scan Any Comic, Know Its Market</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Anton&family=Archivo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1a1410; --paper:#efe7d2; --paper-2:#e6dcc0;
+    --red:#e23b2e; --blue:#2b5fa6; --yellow:#f4c430;
+    --cgc-blue:#1d4f8c; --muted:#6b6354;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:'Archivo',-apple-system,sans-serif;color:var(--ink);line-height:1.55;
+    background-color:var(--paper);
+    background-image:radial-gradient(var(--ink) 0.5px, transparent 0.6px),radial-gradient(rgba(0,0,0,.04) 1px, transparent 1px);
+    background-size:5px 5px,3px 3px;background-position:0 0,1px 1px;-webkit-font-smoothing:antialiased;
+  }
+  .halftone{position:relative;}
+  .halftone::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.18;
+    background-image:radial-gradient(rgba(255,255,255,.9) 1px, transparent 1.4px);background-size:6px 6px;mix-blend-mode:overlay;}
+  header{background:var(--ink);color:var(--paper);border-bottom:5px solid var(--ink);position:sticky;top:0;z-index:60;}
+  .masthead{max-width:1100px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px;}
+  .logo{font-family:'Bangers',cursive;font-size:34px;letter-spacing:2px;line-height:1;color:var(--paper);text-shadow:3px 3px 0 var(--red);-webkit-text-stroke:1px var(--ink);}
+  .logo b{color:var(--yellow);text-shadow:3px 3px 0 var(--ink);-webkit-text-stroke:0;}
+  .price-box{border:3px solid var(--paper);border-radius:3px;padding:5px 9px;text-align:center;transform:rotate(3deg);background:var(--red);}
+  .price-box .top{font-family:'Anton',sans-serif;font-size:10px;letter-spacing:1px;line-height:1;}
+  .price-box .big{font-family:'Bangers',cursive;font-size:20px;line-height:1;color:var(--yellow);}
+  .hero{max-width:1100px;margin:0 auto;padding:40px 20px 10px;position:relative;}
+  .hero-inner{border:4px solid var(--ink);background:var(--paper-2);border-radius:4px;padding:38px 28px;position:relative;overflow:hidden;box-shadow:8px 8px 0 var(--ink);}
+  .hero h1{font-family:'Bangers',cursive;font-size:clamp(42px,8vw,84px);line-height:.92;letter-spacing:2px;max-width:620px;text-shadow:3px 3px 0 rgba(0,0,0,.12);}
+  .hero h1 .red{color:var(--red);-webkit-text-stroke:1.5px var(--ink);}
+  .hero h1 .blue{color:var(--blue);-webkit-text-stroke:1.5px var(--ink);}
+  .hero p{font-size:18px;max-width:480px;margin-top:14px;font-weight:600;}
+  .burst{position:absolute;top:-18px;right:-18px;width:150px;height:150px;display:flex;align-items:center;justify-content:center;text-align:center;
+    font-family:'Bangers',cursive;font-size:26px;line-height:.9;letter-spacing:1px;transform:rotate(12deg);filter:drop-shadow(3px 3px 0 var(--ink));
+    background:var(--yellow);-webkit-text-stroke:0.5px var(--ink);color:var(--ink);
+    clip-path:polygon(50% 0%,61% 12%,78% 6%,76% 24%,94% 22%,84% 38%,100% 48%,84% 60%,95% 76%,76% 74%,80% 92%,62% 84%,52% 100%,40% 85%,22% 94%,24% 75%,5% 78%,16% 60%,0% 50%,16% 40%,4% 24%,23% 26%,21% 7%,38% 14%);}
+  .burst span{transform:rotate(-4deg);padding:0 18px;}
+  .tool{max-width:1100px;margin:26px auto 0;padding:0 20px;}
+  .tabs{display:flex;gap:10px;position:relative;z-index:2;}
+  .tab{flex:1;background:var(--paper-2);border:4px solid var(--ink);border-bottom:none;color:var(--ink);font-family:'Bangers',cursive;letter-spacing:1px;font-size:20px;padding:12px;border-radius:4px 4px 0 0;cursor:pointer;transition:.12s;}
+  .tab.active{background:var(--yellow);transform:translateY(-2px);}
+  .panel{display:none;background:var(--paper-2);border:4px solid var(--ink);border-radius:0 0 4px 4px;padding:24px;box-shadow:6px 6px 0 var(--ink);}
+  .panel.active{display:block;}
+  .searchrow{display:flex;gap:10px;flex-wrap:wrap;}
+  .searchrow input{flex:1;min-width:200px;border:3px solid var(--ink);border-radius:3px;padding:14px 16px;font-size:17px;background:#fffdf6;font-family:'Archivo',sans-serif;font-weight:600;}
+  .searchrow input:focus{outline:none;box-shadow:inset 0 0 0 2px var(--red);}
+  .btn{background:var(--red);color:#fff;font-family:'Bangers',cursive;letter-spacing:1px;font-size:20px;padding:12px 26px;border:3px solid var(--ink);border-radius:3px;cursor:pointer;box-shadow:3px 3px 0 var(--ink);transition:.08s;}
+  .btn:hover{transform:translate(1px,1px);box-shadow:2px 2px 0 var(--ink);}
+  .btn:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--ink);}
+  .hint{font-size:14px;color:var(--muted);margin-top:10px;font-weight:600;}
+  .drop{border:3px dashed var(--ink);border-radius:5px;padding:30px;text-align:center;background:#fffdf6;cursor:pointer;transition:.12s;}
+  .drop:hover{background:#fff;border-color:var(--red);}
+  .drop p{color:var(--muted);font-size:16px;font-weight:600;}
+  .drop strong{color:var(--ink);}
+  #fileInput{display:none;}
+  #preview{max-width:150px;border:3px solid var(--ink);border-radius:3px;margin:14px auto 0;display:none;}
+  .result{margin-top:22px;display:none;}
+  .slab{background:#fffdf6;border:4px solid var(--ink);border-radius:5px;overflow:hidden;box-shadow:8px 8px 0 var(--ink);}
+  .slab-label{background:var(--cgc-blue);color:#fff;padding:16px 18px;display:flex;align-items:center;gap:14px;border-bottom:4px solid var(--ink);}
+  .slab-label .name{font-family:'Bangers',cursive;font-size:26px;letter-spacing:1px;line-height:1;flex:1;}
+  .slab-label .sub{font-family:'Anton',sans-serif;font-size:12px;letter-spacing:1px;opacity:.9;}
+  .slab-body{padding:20px;}
+  .prices{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center;margin-bottom:14px;}
+  .price-cell{background:var(--paper);border:3px solid var(--ink);border-radius:3px;padding:12px 8px;}
+  .price-cell .lbl{font-family:'Anton',sans-serif;font-size:11px;letter-spacing:1px;color:var(--muted);}
+  .price-cell .val{font-family:'Bangers',cursive;font-size:28px;line-height:1;margin-top:3px;}
+  .price-cell .val.red{color:var(--red);}
+  .source-note{font-size:13px;color:var(--muted);text-align:center;margin-bottom:14px;font-weight:600;}
+  .comp-btns{display:flex;gap:10px;flex-wrap:wrap;}
+  .comp-btns a{flex:1;min-width:140px;text-align:center;text-decoration:none;font-family:'Bangers',cursive;letter-spacing:1px;font-size:18px;padding:12px;border-radius:3px;border:3px solid var(--ink);box-shadow:3px 3px 0 var(--ink);transition:.08s;}
+  .comp-btns a:hover{transform:translate(1px,1px);box-shadow:2px 2px 0 var(--ink);}
+  .comp-btns a.sold{background:var(--ink);color:var(--paper);}
+  .comp-btns a.active{background:var(--yellow);color:var(--ink);}
+  .listings{margin-top:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(115px,1fr));gap:10px;}
+  .listing{background:#fffdf6;border:3px solid var(--ink);border-radius:3px;overflow:hidden;text-decoration:none;color:var(--ink);font-size:13px;font-weight:600;transition:.08s;}
+  .listing:hover{transform:translateY(-2px);}
+  .listing img{width:100%;height:115px;object-fit:cover;background:var(--paper);border-bottom:3px solid var(--ink);}
+  .listing .p{padding:7px;}
+  .listing .lp{font-family:'Bangers',cursive;color:var(--red);font-size:18px;}
+  .spinner{width:34px;height:34px;border:4px solid var(--ink);border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite;margin:20px auto;display:none;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .hot{max-width:1100px;margin:56px auto 0;padding:0 20px;}
+  .hot-head{background:var(--red);color:#fff;border:4px solid var(--ink);border-radius:4px;padding:12px 20px;display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:6px;box-shadow:6px 6px 0 var(--ink);margin-bottom:22px;transform:rotate(-.6deg);}
+  .hot-head h2{font-family:'Bangers',cursive;font-size:clamp(28px,5vw,44px);letter-spacing:2px;line-height:1;}
+  .hot-head h2 b{color:var(--yellow);-webkit-text-stroke:1px var(--ink);}
+  .hot-head .sub{font-family:'Anton',sans-serif;font-size:12px;letter-spacing:1px;}
+  .hot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px;}
+  .hot-card{background:#fffdf6;border:4px solid var(--ink);border-radius:4px;padding:14px;display:flex;gap:12px;box-shadow:5px 5px 0 var(--ink);transition:.1s;}
+  .hot-card:hover{transform:translate(-1px,-1px);box-shadow:6px 6px 0 var(--ink);}
+  .hot-card img{width:62px;height:94px;object-fit:cover;border:3px solid var(--ink);border-radius:2px;background:var(--paper);flex-shrink:0;}
+  .hot-card .info{flex:1;min-width:0;}
+  .hot-card .nm{font-family:'Bangers',cursive;font-size:18px;letter-spacing:.5px;line-height:1;}
+  .hot-card .rng{font-size:15px;margin-top:5px;font-weight:700;}
+  .hot-card .rng b{color:var(--red);}
+  .hot-card .cnt{font-size:12px;color:var(--muted);margin-top:2px;font-weight:600;}
+  .hot-card .links{margin-top:8px;display:flex;gap:10px;}
+  .hot-card .links a{font-family:'Anton',sans-serif;font-size:12px;letter-spacing:.5px;text-decoration:none;}
+  .hot-card .links a.sold{color:var(--ink);border-bottom:2px solid var(--ink);}
+  .hot-card .links a.act{color:var(--red);border-bottom:2px solid var(--red);}
+  footer{max-width:1100px;margin:64px auto 0;padding:22px 20px 60px;border-top:4px solid var(--ink);font-size:13px;color:var(--muted);text-align:center;font-weight:600;}
+  footer a{color:var(--ink);font-weight:700;}
+  @media(max-width:520px){.prices{grid-template-columns:1fr 1fr;}.burst{width:110px;height:110px;font-size:19px;top:-10px;right:-10px;}.logo{font-size:26px;}}
+</style>
+</head>
+<body>
+<header class="halftone">
+  <div class="masthead">
+    <div class="logo">COMIC<b>GAUGE</b></div>
+    <div class="price-box"><div class="top">LIVE</div><div class="big">MKT</div></div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-inner halftone">
+    <div class="burst"><span>SOLD<br>COMPS!</span></div>
+    <h1>SCAN A <span class="red">COMIC.</span><br>KNOW ITS <span class="blue">WORTH.</span></h1>
+    <p>Snap a cover or type a title. Pull live listings, jump straight to sold comps, and watch which key issues are heating up — in real time.</p>
+  </div>
+</section>
+
+<section class="tool">
+  <div class="tabs">
+    <button class="tab active" data-tab="search">SEARCH A TITLE</button>
+    <button class="tab" data-tab="scan">SCAN A COVER</button>
+  </div>
+  <div class="panel active" id="panel-search">
+    <div class="searchrow">
+      <input id="searchInput" type="text" placeholder="e.g. Amazing Spider-Man 300 CGC 9.8" />
+      <button class="btn" id="searchBtn">CHECK IT</button>
+    </div>
+    <p class="hint">Add a grade (CGC 9.8) for tighter comps. Works for raw or slabbed books.</p>
+  </div>
+  <div class="panel" id="panel-scan">
+    <div class="drop" id="drop">
+      <p><strong>Tap to upload</strong> or drop a cover photo</p>
+      <p style="font-size:13px;margin-top:6px;">Cover ID works best on clear, straight-on shots.</p>
+      <img id="preview" alt="preview" />
+    </div>
+    <input id="fileInput" type="file" accept="image/*" />
+  </div>
+  <div class="spinner" id="spinner"></div>
+  <div class="result" id="result">
+    <div class="slab">
+      <div class="slab-label halftone">
+        <div class="name" id="rName">—</div>
+        <div class="sub" id="rSub">MARKET</div>
+      </div>
+      <div class="slab-body">
+        <div class="prices">
+          <div class="price-cell"><div class="lbl">LOW</div><div class="val" id="rLow">—</div></div>
+          <div class="price-cell"><div class="lbl">AVG LISTING</div><div class="val red" id="rAvg">—</div></div>
+          <div class="price-cell"><div class="lbl">HIGH</div><div class="val" id="rHigh">—</div></div>
+        </div>
+        <p class="source-note" id="rNote"></p>
+        <div class="comp-btns">
+          <a class="sold" id="rSold" href="#" target="_blank" rel="noopener">VIEW SOLD COMPS</a>
+          <a class="active" id="rActive" href="#" target="_blank" rel="noopener">ALL LISTINGS</a>
+        </div>
+        <div class="listings" id="rListings"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="hot">
+  <div class="hot-head halftone">
+    <h2>HOT COMICS <b>RIGHT NOW</b></h2>
+    <div class="sub">RE-RANKED LIVE BY MARKET ACTIVITY</div>
+  </div>
+  <div class="spinner" id="hotSpinner" style="display:block;"></div>
+  <div class="hot-grid" id="hotGrid"></div>
+</section>
+
+<footer>
+  <p>ComicGauge shows live eBay listings and links to completed-sale comps. Not financial advice; values fluctuate. Part of the Gauge family — see also <a href="https://cardgauge.com" target="_blank" rel="noopener">CardGauge</a> &amp; <a href="https://worthgauge.com" target="_blank" rel="noopener">WorthGauge</a>.</p>
+</footer>
+
+<script>
+  const API = window.location.origin;
+  document.querySelectorAll('.tab').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      document.getElementById('panel-' + t.dataset.tab).classList.add('active');
+    });
+  });
+  const spinner = document.getElementById('spinner'), result = document.getElementById('result');
+  function fmt(v){ return v == null ? '—' : '$' + Number(v).toLocaleString(undefined,{maximumFractionDigits:0}); }
+  function renderResult(d){
+    document.getElementById('rName').textContent = d.identified || d.query || 'Result';
+    document.getElementById('rSub').textContent  = d.listingCount ? (d.listingCount + ' LIVE') : 'MARKET';
+    document.getElementById('rLow').textContent  = fmt(d.lowPrice);
+    document.getElementById('rAvg').textContent  = fmt(d.avgPrice);
+    document.getElementById('rHigh').textContent = fmt(d.highPrice);
+    document.getElementById('rNote').textContent = d.note || '';
+    document.getElementById('rSold').href = d.soldCompsUrl || '#';
+    document.getElementById('rActive').href = d.activeListingsUrl || '#';
+    const wrap = document.getElementById('rListings'); wrap.innerHTML = '';
+    (d.listings || []).forEach(l => {
+      const a = document.createElement('a');
+      a.className='listing'; a.href=l.url; a.target='_blank'; a.rel='noopener';
+      a.innerHTML = '<img src="'+(l.image||'')+'" alt=""><div class="p"><div class="lp">'+fmt(l.price)+'</div>'+(l.condition||'')+'</div>';
+      wrap.appendChild(a);
+    });
+    result.style.display='block';
+  }
+  async function runSearch(q){
+    if(!q) return;
+    result.style.display='none'; spinner.style.display='block';
+    try{
+      const r = await fetch(API + '/api/market?q=' + encodeURIComponent(q));
+      const d = await r.json();
+      if(d.success) renderResult(d); else alert(d.error || 'No results. Add the issue number and try again.');
+    }catch(e){ alert('Market lookup failed. Try again.'); }
+    spinner.style.display='none';
+  }
+  document.getElementById('searchBtn').addEventListener('click', () => runSearch(document.getElementById('searchInput').value.trim()));
+  document.getElementById('searchInput').addEventListener('keydown', e => { if(e.key==='Enter') runSearch(e.target.value.trim()); });
+  const drop=document.getElementById('drop'),fileInput=document.getElementById('fileInput'),preview=document.getElementById('preview');
+  drop.addEventListener('click', () => fileInput.click());
+  drop.addEventListener('dragover', e => { e.preventDefault(); drop.style.borderColor='var(--red)'; });
+  drop.addEventListener('dragleave', () => drop.style.borderColor='');
+  drop.addEventListener('drop', e => { e.preventDefault(); drop.style.borderColor=''; if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+  fileInput.addEventListener('change', e => { if(e.target.files[0]) handleFile(e.target.files[0]); });
+  async function handleFile(file){
+    const reader = new FileReader();
+    reader.onload = async () => {
+      preview.src = reader.result; preview.style.display='block';
+      result.style.display='none'; spinner.style.display='block';
+      try{
+        const r = await fetch(API + '/api/scan', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ image: reader.result }) });
+        const d = await r.json();
+        if(d.success) renderResult(d); else alert(d.error || 'Could not identify the comic. Try the search lookup.');
+      }catch(e){ alert('Scan failed. Try again or use search.'); }
+      spinner.style.display='none';
+    };
+    reader.readAsDataURL(file);
+  }
+  async function loadHot(){
+    try{
+      const r = await fetch(API + '/api/hot-comics');
+      const d = await r.json();
+      const grid = document.getElementById('hotGrid');
+      document.getElementById('hotSpinner').style.display='none';
+      grid.innerHTML='';
+      (d.items||[]).forEach(it => {
+        const range = (it.lowPrice!=null && it.highPrice!=null) ? '<b>'+fmt(it.lowPrice)+'</b> – '+fmt(it.highPrice) : 'No live listings';
+        const div = document.createElement('div'); div.className='hot-card';
+        div.innerHTML = '<img src="'+(it.image||'')+'" alt=""><div class="info"><div class="nm">'+it.title+'</div><div class="rng">'+range+'</div><div class="cnt">'+(it.listingCount||0)+' listed</div><div class="links"><a class="sold" href="'+it.soldCompsUrl+'" target="_blank" rel="noopener">SOLD</a> <a class="act" href="'+it.listingsUrl+'" target="_blank" rel="noopener">LISTINGS</a></div></div>';
+        grid.appendChild(div);
+      });
+    }catch(e){
+      document.getElementById('hotSpinner').style.display='none';
+      document.getElementById('hotGrid').innerHTML='<p style="color:var(--muted);font-weight:600;">Hot board is warming up — refresh in a moment.</p>';
+    }
+  }
+  loadHot();
+</script>
+</body>
+</html>
